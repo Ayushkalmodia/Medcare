@@ -453,72 +453,81 @@ exports.getDoctorAvailability = asyncHandler(async (req, res, next) => {
 // @route   GET /api/v1/doctors
 // @access  Public
 exports.getDoctors = asyncHandler(async (req, res, next) => {
-  try {
-    const doctors = await Doctor.find().populate({
-      path: 'user',
-      select: 'name email phoneNumber gender profileImage'
-    });
-
-    // Log the doctors data for debugging
-    console.log('Doctors from database:', doctors);
-
-    res.status(200).json({
-      success: true,
-      count: doctors.length,
-      data: doctors
-    });
-  } catch (error) {
-    console.error('Error in getDoctors:', error);
-    next(error);
-  }
+  const doctors = await Doctor.find().populate('user', 'firstName lastName email');
+  res.status(200).json({
+    success: true,
+    count: doctors.length,
+    data: doctors
+  });
 });
 
 // @desc    Get single doctor
 // @route   GET /api/v1/doctors/:id
 // @access  Public
-exports.getDoctorById = asyncHandler(async (req, res, next) => {
-  const doctor = await Doctor.findById(req.params.id).populate({
-    path: 'user',
-    select: 'name email phoneNumber gender'
-  });
-
+exports.getDoctor = asyncHandler(async (req, res, next) => {
+  const doctor = await Doctor.findById(req.params.id).populate('user', 'firstName lastName email');
   if (!doctor) {
-    return next(
-      new ErrorResponse(`Doctor not found with id of ${req.params.id}`, 404)
-    );
+    return next(new ErrorResponse(`Doctor not found with id of ${req.params.id}`, 404));
   }
-
   res.status(200).json({
     success: true,
     data: doctor
   });
 });
 
-// @desc    Create new doctor
-// @route   POST /api/v1/doctors
-// @access  Private/Admin
-exports.createDoctor = asyncHandler(async (req, res, next) => {
-  // Add user to req.body
-  req.body.user = req.user.id;
+// @desc    Get doctor's patients
+// @route   GET /api/v1/doctors/my-patients
+// @access  Private (Doctor)
+exports.getMyPatients = asyncHandler(async (req, res, next) => {
+  // Get all appointments for this doctor
+  const appointments = await Appointment.find({ doctor: req.user.id })
+    .populate('patient', 'user')
+    .populate('patient.user', 'firstName lastName email');
 
-  const doctor = await Doctor.create(req.body);
+  // Extract unique patients
+  const uniquePatients = appointments.reduce((acc, appointment) => {
+    const patientId = appointment.patient._id.toString();
+    if (!acc[patientId]) {
+      acc[patientId] = appointment.patient;
+    }
+    return acc;
+  }, {});
 
-  res.status(201).json({
+  res.status(200).json({
     success: true,
-    data: doctor
+    count: Object.keys(uniquePatients).length,
+    data: Object.values(uniquePatients)
+  });
+});
+
+// @desc    Get doctor's appointments
+// @route   GET /api/v1/doctors/doctor-appointments
+// @access  Private (Doctor)
+exports.getDoctorAppointments = asyncHandler(async (req, res, next) => {
+  const appointments = await Appointment.find({ doctor: req.user.id })
+    .populate('patient', 'user')
+    .populate('patient.user', 'firstName lastName email')
+    .sort({ date: 1, time: 1 });
+
+  res.status(200).json({
+    success: true,
+    count: appointments.length,
+    data: appointments
   });
 });
 
 // @desc    Update doctor
 // @route   PUT /api/v1/doctors/:id
-// @access  Private/Admin
+// @access  Private (Doctor)
 exports.updateDoctor = asyncHandler(async (req, res, next) => {
   let doctor = await Doctor.findById(req.params.id);
-
   if (!doctor) {
-    return next(
-      new ErrorResponse(`Doctor not found with id of ${req.params.id}`, 404)
-    );
+    return next(new ErrorResponse(`Doctor not found with id of ${req.params.id}`, 404));
+  }
+
+  // Make sure user is doctor owner
+  if (doctor.user.toString() !== req.user.id && req.user.role !== 'admin') {
+    return next(new ErrorResponse(`User ${req.user.id} is not authorized to update this doctor`, 401));
   }
 
   doctor = await Doctor.findByIdAndUpdate(req.params.id, req.body, {
@@ -534,14 +543,16 @@ exports.updateDoctor = asyncHandler(async (req, res, next) => {
 
 // @desc    Delete doctor
 // @route   DELETE /api/v1/doctors/:id
-// @access  Private/Admin
+// @access  Private (Doctor)
 exports.deleteDoctor = asyncHandler(async (req, res, next) => {
   const doctor = await Doctor.findById(req.params.id);
-
   if (!doctor) {
-    return next(
-      new ErrorResponse(`Doctor not found with id of ${req.params.id}`, 404)
-    );
+    return next(new ErrorResponse(`Doctor not found with id of ${req.params.id}`, 404));
+  }
+
+  // Make sure user is doctor owner
+  if (doctor.user.toString() !== req.user.id && req.user.role !== 'admin') {
+    return next(new ErrorResponse(`User ${req.user.id} is not authorized to delete this doctor`, 401));
   }
 
   await doctor.remove();

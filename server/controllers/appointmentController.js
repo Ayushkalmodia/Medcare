@@ -107,29 +107,19 @@ exports.deleteAppointment = asyncHandler(async (req, res, next) => {
   const appointment = await Appointment.findById(req.params.id);
 
   if (!appointment) {
-    return next(
-      new ErrorResponse(`Appointment not found with id of ${req.params.id}`, 404)
-    );
+    return next(new ErrorResponse(`Appointment not found with id of ${req.params.id}`, 404));
   }
 
   // Make sure user is appointment owner or admin
-  if (
-    appointment.patient.toString() !== req.user.id &&
-    req.user.role !== 'admin'
-  ) {
-    return next(
-      new ErrorResponse(
-        `User ${req.user.id} is not authorized to delete this appointment`,
-        401
-      )
-    );
+  if (appointment.patient.toString() !== req.user.id && req.user.role !== 'admin') {
+    return next(new ErrorResponse(`User ${req.user.id} is not authorized to delete this appointment`, 401));
   }
 
-  await Appointment.deleteOne({ _id: req.params.id });
+  await appointment.remove();
 
   res.status(200).json({
     success: true,
-    data: {},
+    data: {}
   });
 });
 

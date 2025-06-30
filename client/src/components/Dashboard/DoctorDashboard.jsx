@@ -1,42 +1,16 @@
 import React, { useState, useEffect } from 'react';
+import { HiCalendar, HiUserGroup, HiDocumentText, HiClock, HiCheck, HiX } from 'react-icons/hi';
+import { toast } from 'react-toastify';
+import api from '../../utils/api';
 import { useAuth } from '../../contexts/AuthContext';
-import axios from 'axios';
-import {
-  Box,
-  Container,
-  Typography,
-  Grid,
-  Card,
-  CardContent,
-  Button,
-  Tabs,
-  Tab,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  MenuItem,
-  CircularProgress,
-  Alert
-} from '@mui/material';
-import { format } from 'date-fns';
 
 const DoctorDashboard = () => {
-  const { user } = useAuth();
   const [appointments, setAppointments] = useState([]);
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [tabValue, setTabValue] = useState(0);
-  const [selectedAppointment, setSelectedAppointment] = useState(null);
-  const [openDialog, setOpenDialog] = useState(false);
-  const [notes, setNotes] = useState({
-    diagnosis: '',
-    prescription: '',
-    notes: '',
-    followUpDate: ''
-  });
+  const [filter, setFilter] = useState('pending'); // 'pending', 'confirmed', 'cancelled'
+  const { user } = useAuth();
 
   useEffect(() => {
     fetchAppointments();
@@ -45,226 +19,217 @@ const DoctorDashboard = () => {
 
   const fetchAppointments = async () => {
     try {
-      const response = await axios.get('/api/doctors/me/appointments');
+      const response = await api.get('/doctors/doctor-appointments');
       setAppointments(response.data.data);
-      setLoading(false);
+      setError(null);
     } catch (err) {
       setError('Failed to fetch appointments');
+      toast.error(err.response?.data?.message || 'Failed to fetch appointments');
+    } finally {
       setLoading(false);
     }
   };
 
   const fetchPatients = async () => {
     try {
-      const response = await axios.get('/api/doctors/me/patients');
+      const response = await api.get('/doctors/my-patients');
       setPatients(response.data.data);
     } catch (err) {
-      setError('Failed to fetch patients');
+      toast.error(err.response?.data?.message || 'Failed to fetch patients');
     }
   };
 
-  const handleStatusUpdate = async (appointmentId, status) => {
+  const handleAppointmentStatus = async (appointmentId, status) => {
     try {
-      await axios.put(`/api/doctors/appointments/${appointmentId}/status`, { status });
+      await api.patch(`/appointments/${appointmentId}`, { status });
+      toast.success(`Appointment ${status} successfully`);
       fetchAppointments();
     } catch (err) {
-      setError('Failed to update appointment status');
+      toast.error(err.response?.data?.message || `Failed to ${status} appointment`);
     }
   };
 
-  const handleAddNotes = async () => {
-    try {
-      await axios.put(`/api/doctors/appointments/${selectedAppointment._id}/notes`, notes);
-      setOpenDialog(false);
-      fetchAppointments();
-      setNotes({
-        diagnosis: '',
-        prescription: '',
-        notes: '',
-        followUpDate: ''
-      });
-    } catch (err) {
-      setError('Failed to add notes');
-    }
-  };
-
-  const handleOpenDialog = (appointment) => {
-    setSelectedAppointment(appointment);
-    setNotes({
-      diagnosis: appointment.diagnosis || '',
-      prescription: appointment.prescription || '',
-      notes: appointment.notes || '',
-      followUpDate: appointment.followUpDate || ''
-    });
-    setOpenDialog(true);
-  };
+  const filteredAppointments = appointments.filter(appointment => 
+    filter === 'all' ? true : appointment.status === filter
+  );
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh">
-        <CircularProgress />
-      </Box>
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-red-500">{error}</p>
+      </div>
     );
   }
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
+    <div className="space-y-6">
+      {/* Stats Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center">
+            <div className="p-3 rounded-full bg-blue-100 text-blue-600">
+              <HiCalendar className="h-6 w-6" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Total Appointments</p>
+              <p className="text-lg font-semibold text-gray-900">{appointments.length}</p>
+            </div>
+          </div>
+        </div>
 
-      <Typography variant="h4" gutterBottom>
-        Doctor Dashboard
-      </Typography>
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center">
+            <div className="p-3 rounded-full bg-green-100 text-green-600">
+              <HiUserGroup className="h-6 w-6" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Total Patients</p>
+              <p className="text-lg font-semibold text-gray-900">{patients.length}</p>
+            </div>
+          </div>
+        </div>
 
-      <Tabs value={tabValue} onChange={(e, newValue) => setTabValue(newValue)} sx={{ mb: 3 }}>
-        <Tab label="Appointments" />
-        <Tab label="Patients" />
-      </Tabs>
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center">
+            <div className="p-3 rounded-full bg-yellow-100 text-yellow-600">
+              <HiClock className="h-6 w-6" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Pending Appointments</p>
+              <p className="text-lg font-semibold text-gray-900">
+                {appointments.filter(a => a.status === 'pending').length}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
 
-      {tabValue === 0 && (
-        <Grid container spacing={3}>
-          {appointments.map((appointment) => (
-            <Grid item xs={12} md={6} key={appointment._id}>
-              <Card>
-                <CardContent>
-                  <Typography variant="h6">
-                    {appointment.patient.firstName} {appointment.patient.lastName}
-                  </Typography>
-                  <Typography color="textSecondary">
-                    Date: {format(new Date(appointment.date), 'PPP')}
-                  </Typography>
-                  <Typography color="textSecondary">
-                    Time: {appointment.time}
-                  </Typography>
-                  <Typography color="textSecondary">
-                    Type: {appointment.appointmentType}
-                  </Typography>
-                  <Typography color="textSecondary">
-                    Status: {appointment.status}
-                  </Typography>
-                  <Typography color="textSecondary">
-                    Reason: {appointment.reason}
-                  </Typography>
-                  
-                  <Box mt={2}>
-                    {appointment.status === 'scheduled' && (
-                      <>
-                        <Button
-                          variant="contained"
-                          color="primary"
-                          onClick={() => handleStatusUpdate(appointment._id, 'confirmed')}
-                          sx={{ mr: 1 }}
-                        >
-                          Confirm
-                        </Button>
-                        <Button
-                          variant="contained"
-                          color="error"
-                          onClick={() => handleStatusUpdate(appointment._id, 'cancelled')}
-                        >
-                          Cancel
-                        </Button>
-                      </>
-                    )}
-                    {appointment.status === 'confirmed' && (
-                      <>
-                        <Button
-                          variant="contained"
-                          color="success"
-                          onClick={() => handleStatusUpdate(appointment._id, 'completed')}
-                          sx={{ mr: 1 }}
-                        >
-                          Mark Complete
-                        </Button>
-                        <Button
-                          variant="outlined"
-                          onClick={() => handleOpenDialog(appointment)}
-                        >
-                          Add Notes
-                        </Button>
-                      </>
-                    )}
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
-      )}
+      {/* Appointments Section */}
+      <div className="bg-white rounded-lg shadow">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-medium text-gray-900">Appointments</h3>
+            <div className="flex space-x-4">
+              <button
+                onClick={() => setFilter('pending')}
+                className={`px-4 py-2 rounded-md ${
+                  filter === 'pending'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Pending
+              </button>
+              <button
+                onClick={() => setFilter('confirmed')}
+                className={`px-4 py-2 rounded-md ${
+                  filter === 'confirmed'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Confirmed
+              </button>
+              <button
+                onClick={() => setFilter('cancelled')}
+                className={`px-4 py-2 rounded-md ${
+                  filter === 'cancelled'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Cancelled
+              </button>
+            </div>
+          </div>
+        </div>
 
-      {tabValue === 1 && (
-        <Grid container spacing={3}>
-          {patients.map((patient) => (
-            <Grid item xs={12} md={4} key={patient._id}>
-              <Card>
-                <CardContent>
-                  <Typography variant="h6">
-                    {patient.firstName} {patient.lastName}
-                  </Typography>
-                  <Typography color="textSecondary">
-                    Email: {patient.email}
-                  </Typography>
-                  <Typography color="textSecondary">
-                    Gender: {patient.gender}
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
-      )}
+        <div className="divide-y divide-gray-200">
+          {filteredAppointments.length === 0 ? (
+            <div className="px-6 py-4 text-center text-gray-500">
+              No appointments found
+            </div>
+          ) : (
+            filteredAppointments.map((appointment) => (
+              <div key={appointment._id} className="px-6 py-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">
+                      {appointment.patient?.user?.firstName} {appointment.patient?.user?.lastName}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      {new Date(appointment.date).toLocaleDateString()} at {appointment.time}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      {appointment.appointmentType === 'video' ? 'Video Consultation' : 'In-Person Visit'}
+                    </p>
+                  </div>
+                  {appointment.status === 'pending' && (
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => handleAppointmentStatus(appointment._id, 'confirmed')}
+                        className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200"
+                      >
+                        <HiCheck className="h-4 w-4 mr-1" />
+                        Approve
+                      </button>
+                      <button
+                        onClick={() => handleAppointmentStatus(appointment._id, 'cancelled')}
+                        className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200"
+                      >
+                        <HiX className="h-4 w-4 mr-1" />
+                        Deny
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
 
-      <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="md" fullWidth>
-        <DialogTitle>Add Appointment Notes</DialogTitle>
-        <DialogContent>
-          <TextField
-            fullWidth
-            label="Diagnosis"
-            multiline
-            rows={3}
-            value={notes.diagnosis}
-            onChange={(e) => setNotes({ ...notes, diagnosis: e.target.value })}
-            margin="normal"
-          />
-          <TextField
-            fullWidth
-            label="Prescription"
-            multiline
-            rows={3}
-            value={notes.prescription}
-            onChange={(e) => setNotes({ ...notes, prescription: e.target.value })}
-            margin="normal"
-          />
-          <TextField
-            fullWidth
-            label="Notes"
-            multiline
-            rows={3}
-            value={notes.notes}
-            onChange={(e) => setNotes({ ...notes, notes: e.target.value })}
-            margin="normal"
-          />
-          <TextField
-            fullWidth
-            label="Follow-up Date"
-            type="date"
-            value={notes.followUpDate}
-            onChange={(e) => setNotes({ ...notes, followUpDate: e.target.value })}
-            margin="normal"
-            InputLabelProps={{ shrink: true }}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
-          <Button onClick={handleAddNotes} variant="contained" color="primary">
-            Save
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Container>
+      {/* Recent Patients Section */}
+      <div className="bg-white rounded-lg shadow">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h3 className="text-lg font-medium text-gray-900">Recent Patients</h3>
+        </div>
+        <div className="divide-y divide-gray-200">
+          {patients.length === 0 ? (
+            <div className="px-6 py-4 text-center text-gray-500">
+              No patients found
+            </div>
+          ) : (
+            patients.slice(0, 5).map((patient) => (
+              <div key={patient._id} className="px-6 py-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">
+                      {patient.user?.firstName} {patient.user?.lastName}
+                    </p>
+                    <p className="text-sm text-gray-500">{patient.user?.email}</p>
+                  </div>
+                  <button
+                    onClick={() => window.location.href = `/patients/${patient._id}`}
+                    className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200"
+                  >
+                    View Records
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    </div>
   );
 };
 

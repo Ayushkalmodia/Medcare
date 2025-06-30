@@ -23,9 +23,15 @@ const Login = () => {
     setLoading(true);
 
     try {
-      await login(formData);
+      const user = await login(formData);
       toast.success('Login successful!');
-      navigate('/dashboard');
+      
+      // Redirect based on user role
+      if (user.role === 'doctor') {
+        navigate('/doctor-dashboard');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err) {
       toast.error(err.message || 'Login failed. Please try again.');
     } finally {

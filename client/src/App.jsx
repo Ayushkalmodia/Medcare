@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Layout from './components/Layout/Layout';
+import DoctorLayout from './components/Layout/DoctorLayout';
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -23,15 +24,15 @@ function App() {
   return (
     <AuthProvider>
       <Router>
-        <Layout>
-          <Routes>
+        <Routes>
+          <Route element={<Layout />}>
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route
               path="/appointments"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={['patient']}>
                   <Appointments />
                 </ProtectedRoute>
               }
@@ -39,7 +40,7 @@ function App() {
             <Route
               path="/book-appointment"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={['patient']}>
                   <AppointmentBooking />
                 </ProtectedRoute>
               }
@@ -51,11 +52,14 @@ function App() {
             <Route
               path="/dashboard"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={['patient']}>
                   <Dashboard />
                 </ProtectedRoute>
               }
             />
+          </Route>
+
+          <Route element={<DoctorLayout />}>
             <Route
               path="/doctor-dashboard"
               element={
@@ -64,20 +68,20 @@ function App() {
                 </ProtectedRoute>
               }
             />
-          </Routes>
-          <ToastContainer
-            position="top-right"
-            autoClose={5000}
-            hideProgressBar={false}
-            newestOnTop
-            closeOnClick
-            rtl={false}
-            pauseOnFocusLoss
-            draggable
-            pauseOnHover
-            theme="light"
-          />
-        </Layout>
+          </Route>
+        </Routes>
+        <ToastContainer
+          position="top-right"
+          autoClose={5000}
+          hideProgressBar={false}
+          newestOnTop
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="light"
+        />
       </Router>
     </AuthProvider>
   );

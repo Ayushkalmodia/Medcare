@@ -14,7 +14,7 @@ const AppointmentBooking = () => {
   const [availableDates, setAvailableDates] = useState([]);
   const [availableTimeSlots, setAvailableTimeSlots] = useState([]);
   const [formData, setFormData] = useState({
-    patientName: user?.name || '',
+    patientName: user?.firstName + ' ' + user?.lastName || '',
     email: user?.email || '',
     phone: user?.phoneNumber || '',
     dob: '',

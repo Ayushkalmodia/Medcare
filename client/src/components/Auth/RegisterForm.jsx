@@ -10,6 +10,7 @@ const RegisterForm = () => {
     email: "",
     password: "",
     confirmPassword: "",
+    role: "" // Default role
   });
 
   const [errors, setErrors] = useState({});
@@ -61,6 +62,10 @@ const RegisterForm = () => {
       newErrors.confirmPassword = "Passwords do not match";
     }
 
+    if (!formData.role) {
+      newErrors.role = "Please select a role";
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -77,7 +82,8 @@ const RegisterForm = () => {
           firstName: formData.firstName,
           lastName: formData.lastName,
           email: formData.email,
-          password: formData.password
+          password: formData.password,
+          role: formData.role
         });
 
         toast.success('Registration successful! Please login to continue.');
@@ -178,6 +184,35 @@ const RegisterForm = () => {
           )}
         </div>
 
+        {/* Role Selection */}
+        <div>
+          <label
+            htmlFor="role"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
+            I am a
+          </label>
+          <select
+            id="role"
+            name="role"
+            value={formData.role}
+            onChange={handleChange}
+            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+              errors.role ? "border-red-500" : "border-gray-300"
+            }`}
+            aria-invalid={!!errors.role}
+            aria-describedby="role-error"
+          >
+            <option value="patient">Patient</option>
+            <option value="doctor">Doctor</option>
+          </select>
+          {errors.role && (
+            <p id="role-error" className="mt-1 text-sm text-red-600">
+              {errors.role}
+            </p>
+          )}
+        </div>
+
         {/* Password */}
         <div>
           <label
@@ -232,14 +267,13 @@ const RegisterForm = () => {
           )}
         </div>
 
+        {/* Submit Button */}
         <button
           type="submit"
           disabled={loading}
-          className={`w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
-            loading
-              ? "bg-blue-400 cursor-not-allowed"
-              : "bg-blue-600 hover:bg-blue-700"
-          } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500`}
+          className={`w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+            loading ? "opacity-50 cursor-not-allowed" : ""
+          }`}
         >
           {loading ? "Creating Account..." : "Create Account"}
         </button>
