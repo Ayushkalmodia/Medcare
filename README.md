@@ -92,10 +92,5 @@ npm run dev
 
 ---
 
-## 📸 Screenshots
-_Add screenshots or GIFs of the app here._
-
----
-
 ## 📄 License
 MIT 
