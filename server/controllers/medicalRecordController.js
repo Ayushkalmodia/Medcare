@@ -219,7 +219,7 @@ exports.deleteMedicalRecord = asyncHandler(async (req, res, next) => {
     success: true,
     data: {}
   });
-});
+}); 
 
 // @desc    Get current user's medical records
 // @route   GET /api/v1/medical-records/my-records

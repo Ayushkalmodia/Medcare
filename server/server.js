@@ -6,8 +6,8 @@ const mongoSanitize = require('express-mongo-sanitize');
 const xss = require('xss-clean');
 const hpp = require('hpp');
 const cookieParser = require('cookie-parser');
-const errorHandler = require('../middleware/error');
-const connectDB = require('../config/db');
+const errorHandler = require('./middleware/error');
+const connectDB = require('./config/db');
 
 // Load env vars
 require('dotenv').config();
@@ -49,11 +49,11 @@ const limiter = rateLimit({
 app.use(limiter);
 
 // Mount routers
-app.use('/api/v1/users', require('../routes/userRoutes'));
-app.use('/api/v1/doctors', require('../routes/doctorRoutes'));
-app.use('/api/v1/appointments', require('../routes/appointmentRoutes'));
-app.use('/api/v1/medical-records', require('../routes/medicalRecordRoutes'));
-app.use('/api/v1/notifications', require('../routes/notificationRoutes'));
+app.use('/api/v1/users', require('./routes/userRoutes'));
+app.use('/api/v1/doctors', require('./routes/doctorRoutes'));
+app.use('/api/v1/appointments', require('./routes/appointmentRoutes'));
+app.use('/api/v1/medical-records', require('./routes/medicalRecordRoutes'));
+app.use('/api/v1/notifications', require('./routes/notificationRoutes'));
 
 // Error handler
 app.use(errorHandler);
@@ -71,4 +71,4 @@ process.on('unhandledRejection', (err, promise) => {
   server.close(() => process.exit(1));
 });
 
-module.exports = server;  // Export for testing 
+module.exports = server; 

@@ -382,83 +382,83 @@ exports.addRating = async (req, res, next) => {
 // @route   GET /api/v1/doctors/:id/availability
 // @access  Public
 exports.getDoctorAvailability = asyncHandler(async (req, res, next) => {
-  const doctor = await Doctor.findById(req.params.id);
+    const doctor = await Doctor.findById(req.params.id);
 
-  if (!doctor) {
+    if (!doctor) {
     return next(
       new ErrorResponse(`Doctor not found with id of ${req.params.id}`, 404)
     );
-  }
+    }
 
   // Parse the date from query parameter
   const dateQuery = new Date(req.query.date);
-  if (isNaN(dateQuery.getTime())) {
+    if (isNaN(dateQuery.getTime())) {
     return next(
       new ErrorResponse('Invalid date format', 400)
     );
-  }
-
-  // Set hours to beginning of day for consistency
-  dateQuery.setHours(0, 0, 0, 0);
-
-  // Get doctor's schedule
+    }
+    
+    // Set hours to beginning of day for consistency
+    dateQuery.setHours(0, 0, 0, 0);
+    
+    // Get doctor's schedule
   const availableDays = doctor.availableDays || ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
   const availableHours = doctor.availableHours || { start: '09:00', end: '17:00' };
-
-  // Create time slots (30 min intervals)
-  const createTimeSlots = (start, end) => {
-    const slots = [];
-    const startTime = new Date(`2000-01-01T${start}`);
-    const endTime = new Date(`2000-01-01T${end}`);
-
-    let current = new Date(startTime);
-    while (current < endTime) {
-      const timeString = current.toTimeString().slice(0, 5);
-      slots.push(timeString);
-      current.setMinutes(current.getMinutes() + 30);
-    }
-
-    return slots;
-  };
-
-  const timeSlots = createTimeSlots(
-    availableHours.start,
-    availableHours.end
-  );
-
+    
+    // Create time slots (30 min intervals)
+    const createTimeSlots = (start, end) => {
+      const slots = [];
+      const startTime = new Date(`2000-01-01T${start}`);
+      const endTime = new Date(`2000-01-01T${end}`);
+      
+      let current = new Date(startTime);
+      while (current < endTime) {
+        const timeString = current.toTimeString().slice(0, 5);
+        slots.push(timeString);
+        current.setMinutes(current.getMinutes() + 30);
+      }
+      
+      return slots;
+    };
+    
+    const timeSlots = createTimeSlots(
+      availableHours.start,
+      availableHours.end
+    );
+    
   // Get existing appointments for the date
-  const existingAppointments = await Appointment.find({
-    doctor: doctor._id,
+    const existingAppointments = await Appointment.find({
+      doctor: doctor._id,
     date: dateQuery,
-    status: { $ne: 'cancelled' }
+      status: { $ne: 'cancelled' }
   }).select('time');
-
+    
   const bookedTimes = existingAppointments.map(apt => apt.time);
-
-  // Available slots are all slots minus booked ones
-  const availableSlots = timeSlots.filter(slot => !bookedTimes.includes(slot));
-
+      
+      // Available slots are all slots minus booked ones
+      const availableSlots = timeSlots.filter(slot => !bookedTimes.includes(slot));
+      
   res.status(200).json({
     success: true,
     data: {
       date: dateQuery.toISOString().split('T')[0],
       day: dateQuery.toLocaleDateString('en-US', { weekday: 'long' }),
       available: availableDays.includes(dateQuery.toLocaleDateString('en-US', { weekday: 'long' })),
-      slots: availableSlots
+        slots: availableSlots
     }
   });
-});
+    });
 
 // @desc    Get all doctors
 // @route   GET /api/v1/doctors
 // @access  Public
 exports.getDoctors = asyncHandler(async (req, res, next) => {
   const doctors = await Doctor.find().populate('user', 'firstName lastName email');
-  res.status(200).json({
-    success: true,
-    count: doctors.length,
-    data: doctors
-  });
+    res.status(200).json({
+      success: true,
+      count: doctors.length,
+      data: doctors
+    });
 });
 
 // @desc    Get single doctor

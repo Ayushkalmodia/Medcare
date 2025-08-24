@@ -30,7 +30,7 @@ const Login = () => {
       if (user.role === 'doctor') {
         navigate('/doctor-dashboard');
       } else {
-        navigate('/dashboard');
+      navigate('/dashboard');
       }
     } catch (err) {
       toast.error(err.message || 'Login failed. Please try again.');
