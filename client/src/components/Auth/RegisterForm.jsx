@@ -10,7 +10,7 @@ const RegisterForm = () => {
     email: "",
     password: "",
     confirmPassword: "",
-    role: "" // Default role
+    role: "user" // Default to user (patient)
   });
 
   const [errors, setErrors] = useState({});
@@ -203,7 +203,7 @@ const RegisterForm = () => {
             aria-invalid={!!errors.role}
             aria-describedby="role-error"
           >
-            <option value="patient">Patient</option>
+            <option value="user">Patient</option>
             <option value="doctor">Doctor</option>
           </select>
           {errors.role && (

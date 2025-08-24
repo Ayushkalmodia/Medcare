@@ -3,6 +3,7 @@ const Appointment = require('../models/Appointment');
 const User = require('../models/User');
 const asyncHandler = require('../middleware/async');
 const ErrorResponse = require('../utils/errorResponse');
+const { createAppointmentNotification } = require('./notificationController');
 
 // @desc    Get all appointments
 // @route   GET /api/v1/appointments
@@ -58,6 +59,13 @@ exports.createAppointment = asyncHandler(async (req, res, next) => {
 
   const appointment = await Appointment.create(req.body);
 
+  // Create notification for the patient
+  try {
+    await createAppointmentNotification(req.user.id, appointment._id, 'created');
+  } catch (error) {
+    console.error('Failed to create notification:', error);
+  }
+
   res.status(201).json({
     success: true,
     data: appointment
@@ -89,10 +97,20 @@ exports.updateAppointment = asyncHandler(async (req, res, next) => {
     }
   }
 
+  const oldStatus = appointment.status;
   appointment = await Appointment.findByIdAndUpdate(req.params.id, req.body, {
     new: true,
     runValidators: true
   });
+
+  // Create notification if status changed
+  if (req.body.status && req.body.status !== oldStatus) {
+    try {
+      await createAppointmentNotification(appointment.patient, appointment._id, req.body.status);
+    } catch (error) {
+      console.error('Failed to create status change notification:', error);
+    }
+  }
 
   res.status(200).json({
     success: true,

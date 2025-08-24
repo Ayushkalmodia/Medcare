@@ -53,6 +53,7 @@ app.use('/api/v1/users', require('../routes/userRoutes'));
 app.use('/api/v1/doctors', require('../routes/doctorRoutes'));
 app.use('/api/v1/appointments', require('../routes/appointmentRoutes'));
 app.use('/api/v1/medical-records', require('../routes/medicalRecordRoutes'));
+app.use('/api/v1/notifications', require('../routes/notificationRoutes'));
 
 // Error handler
 app.use(errorHandler);

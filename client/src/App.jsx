@@ -19,6 +19,7 @@ import Contact from './pages/Contact';
 import Dashboard from './pages/Dashboard';
 import AppointmentBooking from './components/AppointmentBooking/AppointmentBooking';
 import DoctorDashboard from './components/Dashboard/DoctorDashboard';
+import TestNotifications from './pages/TestNotifications';
 
 function App() {
   return (
@@ -32,7 +33,7 @@ function App() {
             <Route
               path="/appointments"
               element={
-                <ProtectedRoute allowedRoles={['patient']}>
+                <ProtectedRoute allowedRoles={['user']}>
                   <Appointments />
                 </ProtectedRoute>
               }
@@ -40,7 +41,7 @@ function App() {
             <Route
               path="/book-appointment"
               element={
-                <ProtectedRoute allowedRoles={['patient']}>
+                <ProtectedRoute allowedRoles={['user']}>
                   <AppointmentBooking />
                 </ProtectedRoute>
               }
@@ -52,8 +53,16 @@ function App() {
             <Route
               path="/dashboard"
               element={
-                <ProtectedRoute allowedRoles={['patient']}>
+                <ProtectedRoute allowedRoles={['user']}>
                   <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/test-notifications"
+              element={
+                <ProtectedRoute allowedRoles={['user', 'doctor']}>
+                  <TestNotifications />
                 </ProtectedRoute>
               }
             />

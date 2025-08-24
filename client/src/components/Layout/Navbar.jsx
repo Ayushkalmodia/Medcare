@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaBars, FaTimes, FaUser, FaSignOutAlt } from 'react-icons/fa';
 import { useAuth } from '../../contexts/AuthContext';
+import NotificationBell from '../UI/NotificationBell';
 
 const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -53,45 +54,54 @@ const Navbar = () => {
           {/* Login/Register buttons or User menu */}
           <div className="hidden md:flex items-center space-x-4">
             {user ? (
-              <div className="relative">
-                <button
-                  onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  className="flex items-center space-x-2 text-gray-700 hover:text-blue-600"
-                >
-                  <FaUser className="h-5 w-5" />
-                  <span>{user.firstName}</span>
-                </button>
-                {userMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
-                    <Link
-                      to="/profile"
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      Profile
-                    </Link>
-                    <Link
+              <>
+                <NotificationBell />
+                <div className="relative">
+                  <button
+                    onClick={() => setUserMenuOpen(!userMenuOpen)}
+                    className="flex items-center space-x-2 text-gray-700 hover:text-blue-600"
+                  >
+                    <FaUser className="h-5 w-5" />
+                    <span>{user.firstName}</span>
+                  </button>
+                  {userMenuOpen && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
+                      <Link
+                        to="/profile"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      >
+                        Profile
+                      </Link>
+                                          <Link
                       to="/appointments"
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     >
                       My Appointments
                     </Link>
-                    {user.role === 'doctor' && (
-                      <Link
-                        to="/doctor-dashboard"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      >
-                        Doctor Dashboard
-                      </Link>
-                    )}
-                    <button
-                      onClick={handleLogout}
-                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    <Link
+                      to="/test-notifications"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     >
-                      Logout
-                    </button>
-                  </div>
-                )}
-              </div>
+                      Test Notifications
+                    </Link>
+                      {user.role === 'doctor' && (
+                        <Link
+                          to="/doctor-dashboard"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        >
+                          Doctor Dashboard
+                        </Link>
+                      )}
+                      <button
+                        onClick={handleLogout}
+                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      >
+                        Logout
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </>
             ) : (
               <>
                 <Link to="/login" className="bg-white text-blue-600 border border-blue-600 px-4 py-2 rounded-lg hover:bg-blue-50">Login</Link>
@@ -114,6 +124,7 @@ const Navbar = () => {
             {user && (
               <>
                 <Link to="/appointments" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600">My Appointments</Link>
+                <Link to="/test-notifications" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600">Test Notifications</Link>
                 {user.role === 'doctor' && (
                   <Link to="/doctor-dashboard" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600">Doctor Dashboard</Link>
                 )}
